@@ -8,31 +8,27 @@ from robusta.api import *
 
 cache_size = 100
 lru_cache = cachetools.LRUCache(maxsize=cache_size)
-class ChatGPTTokenParams(ActionParams):
+class AzureOpenAIParams(ActionParams):
     """
     :var chat_gpt_token: ChatGPT auth token
     """
-    chat_gpt_token: str
-
-
-class ChatGPTParams(ChatGPTTokenParams):
-    """
-    :var search_term: ChatGPT search term
-    :var model: ChatGPT OpenAi API model
-    """
-    search_term: str
-    model: str = "gpt-3.5-turbo"
-
+    api_base: str
+    api_version: str = "2023-05-15"
+    api_key: str
+    deployment_name: str
 
 @action
-def show_chat_gpt_search(event: ExecutionBaseEvent, params: ChatGPTParams):
+def show_chat_gpt_search(event: ExecutionBaseEvent, params: AzureOpenAIParams):
     """
     Add a finding with ChatGPT top results for the specified search term.
     This action can be used together with the stack_overflow_enricher.
     """
-    openai.api_key = params.chat_gpt_token
+    openai.api_type = "azure"
+    openai.api_base = params.api_base
+    openai.api_version = params.api_version
+    openai.api_key = params.api_key
 
-    logging.info(f"ChatGPT search term: {params.search_term}")
+    logging.info(f"Azure OpenAI search term: {params.search_term}")
 
     answers = []
     try:
@@ -47,15 +43,13 @@ def show_chat_gpt_search(event: ExecutionBaseEvent, params: ChatGPTParams):
                 {"role": "user", "content": f"Please describe what the Kubernetes Prometheus alert '{params.search_term}' means, giving succinct examples of common causes. Provide any possible solutions including any troubleshooting steps that can be performed, give a real world example of a situation that can cause the alert can occur. Clearly seperate sections for Alert Name, Description, Real World Example, Common Causes, Troubleshooting Steps and Possible Solutions."},
             ]
 
-            logging.info(f"ChatGPT input: {input}")
+            logging.info(f"Azure OpenAI input: {input}")
             res: OpenAIObject = openai.ChatCompletion.create(
-                model=params.model,
-                messages=input,
-                max_tokens=1000,
-                temperature=0
+                engine=params.deployment_name,
+                messages=input
             )
             if res:
-                logging.info(f"ChatGPT response: {res}")
+                logging.info(f"Azure OpenAI response: {res}")
                 total_tokens = res.usage['total_tokens']
                 time_taken = time.time() - start_time
                 response_content = res.choices[0].message.content
@@ -64,15 +58,15 @@ def show_chat_gpt_search(event: ExecutionBaseEvent, params: ChatGPTParams):
 
             answers.append(f"\n\n ---")
             answers.append(f"\n\n | Time taken: {time_taken:.2f} seconds | Total tokens used: {total_tokens} |")
-                
+
     except Exception as e:
         answers.append(f"Error calling ChatCompletion.create: {e}")
-        raise                
+        raise
 
     finding = Finding(
-        title=f"ChatGPT ({params.model}) Results",
+        title=f"Azure OpenAI ({params.model}) Results",
         source=FindingSource.PROMETHEUS,
-        aggregation_key="ChatGPT Wisdom",
+        aggregation_key="Azure OpenAI Wisdom",
     )
 
     if answers:
@@ -81,12 +75,12 @@ def show_chat_gpt_search(event: ExecutionBaseEvent, params: ChatGPTParams):
         finding.add_enrichment(
             [
                 MarkdownBlock(
-                    f'Sorry, ChatGPT doesn\'t know anything about "{params.search_term}"'
+                    f'Sorry, Azure OpenAI doesn\'t know anything about "{params.search_term}"'
                 )
             ]
         )
     event.add_finding(finding)
-    
+
 @action
 def chat_gpt_enricher(alert: PrometheusKubernetesAlert, params: ChatGPTTokenParams):
     """
@@ -100,7 +94,7 @@ def chat_gpt_enricher(alert: PrometheusKubernetesAlert, params: ChatGPTTokenPara
         [
             CallbackBlock(
                 {
-                    f'Ask ChatGPT: {alert_name}': CallbackChoice(
+                    f'Ask Azure OpenAI: {alert_name}': CallbackChoice(
                         action=show_chat_gpt_search,
                         action_params=ChatGPTParams(
                             search_term=f"{alert_name}",
