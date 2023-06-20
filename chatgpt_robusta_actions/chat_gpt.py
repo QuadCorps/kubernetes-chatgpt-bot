@@ -99,9 +99,9 @@ def chat_gpt_enricher(alert: PrometheusKubernetesAlert, params: AzureOpenAIParam
                         action=show_chat_gpt_search,
                         action_params=AzureOpenAIParams(
                             search_term=f"{alert_name}",
-                            api_base=params.api_base
-                            api_version=params.api_version
-                            api_key=params.api_key
+                            api_base=params.api_base,
+                            api_version=params.api_version,
+                            api_key=params.api_key,
                             deployment_name=params.deployment_name
                         ),
                     )
