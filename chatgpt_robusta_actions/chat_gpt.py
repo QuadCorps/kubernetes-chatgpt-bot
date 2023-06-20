@@ -73,7 +73,7 @@ def show_chat_gpt_search(event: ExecutionBaseEvent, params: AzureOpenAIParams):
         raise
 
     finding = Finding(
-        title=f"Azure OpenAI ({params.model}) Results",
+        title=f"Azure OpenAI ({res.model}) Results",
         source=FindingSource.PROMETHEUS,
         aggregation_key="Azure OpenAI Wisdom",
     )
