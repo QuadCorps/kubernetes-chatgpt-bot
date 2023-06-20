@@ -40,9 +40,11 @@ def show_chat_gpt_search(event: ExecutionBaseEvent, params: AzureOpenAIParams):
     logging.info(f"Azure OpenAI search term: {params.search_term}")
 
     answers = []
+    model = "unknown"
     try:
         if params.search_term in lru_cache:
             answers = lru_cache[params.search_term]
+            logging.info(f"Answer pulled out of the cache {answers}")
         else:
             start_time = time.time()
             input = [
@@ -64,6 +66,7 @@ def show_chat_gpt_search(event: ExecutionBaseEvent, params: AzureOpenAIParams):
                 response_content = res.choices[0].message.content
                 lru_cache[params.search_term] = [response_content]  # Store only the main response in the cache
                 answers.append(response_content)
+                model = res.model
 
             answers.append(f"\n\n ---")
             answers.append(f"\n\n | Time taken: {time_taken:.2f} seconds | Total tokens used: {total_tokens} |")
@@ -73,7 +76,7 @@ def show_chat_gpt_search(event: ExecutionBaseEvent, params: AzureOpenAIParams):
         raise
 
     finding = Finding(
-        title=f"Azure OpenAI ({res.model}) Results",
+        title=f"Azure OpenAI ({model}) Results",
         source=FindingSource.PROMETHEUS,
         aggregation_key="Azure OpenAI Wisdom",
     )
