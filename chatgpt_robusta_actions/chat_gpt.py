@@ -8,15 +8,23 @@ from robusta.api import *
 
 cache_size = 100
 lru_cache = cachetools.LRUCache(maxsize=cache_size)
-class AzureOpenAIParams(ActionParams):
+class AzureOpenAIAuthParams(ActionParams):
     """
-    :var chat_gpt_token: ChatGPT auth token
+    :var api_base: Azure OpenAI base url
+    :var api_version: Azure OpenAI AI version
+    :var api_key: Azure OpenAI API Key
+    :var deployment_name: Azure OpenAI Deployment name
     """
-    search_term: str
     api_base: str
     api_version: str = "2023-05-15"
     api_key: str
     deployment_name: str
+
+class AzureOpenAIParams(AzureOpenAIAuthParams):
+    """
+    :var search_term: Azure OpenAI search term
+    """
+    search_term: str
 
 @action
 def show_chat_gpt_search(event: ExecutionBaseEvent, params: AzureOpenAIParams):
@@ -83,7 +91,7 @@ def show_chat_gpt_search(event: ExecutionBaseEvent, params: AzureOpenAIParams):
     event.add_finding(finding)
 
 @action
-def chat_gpt_enricher(alert: PrometheusKubernetesAlert, params: AzureOpenAIParams):
+def chat_gpt_enricher(alert: PrometheusKubernetesAlert, params: AzureOpenAIAuthParams):
     """
     Add a button to the alert - clicking it will ask chat gpt to help find a solution.
     """
