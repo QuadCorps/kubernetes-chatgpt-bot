@@ -12,6 +12,7 @@ class AzureOpenAIParams(ActionParams):
     """
     :var chat_gpt_token: ChatGPT auth token
     """
+    search_term: str
     api_base: str
     api_version: str = "2023-05-15"
     api_key: str
