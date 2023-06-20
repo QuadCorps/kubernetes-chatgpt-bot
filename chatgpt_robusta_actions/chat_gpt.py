@@ -82,7 +82,7 @@ def show_chat_gpt_search(event: ExecutionBaseEvent, params: AzureOpenAIParams):
     event.add_finding(finding)
 
 @action
-def chat_gpt_enricher(alert: PrometheusKubernetesAlert, params: ChatGPTTokenParams):
+def chat_gpt_enricher(alert: PrometheusKubernetesAlert, params: AzureOpenAIParams):
     """
     Add a button to the alert - clicking it will ask chat gpt to help find a solution.
     """
@@ -96,9 +96,12 @@ def chat_gpt_enricher(alert: PrometheusKubernetesAlert, params: ChatGPTTokenPara
                 {
                     f'Ask Azure OpenAI: {alert_name}': CallbackChoice(
                         action=show_chat_gpt_search,
-                        action_params=ChatGPTParams(
+                        action_params=AzureOpenAIParams(
                             search_term=f"{alert_name}",
-                            chat_gpt_token=params.chat_gpt_token,
+                            api_base=params.api_base
+                            api_version=params.api_version
+                            api_key=params.api_key
+                            deployment_name=params.deployment_name
                         ),
                     )
                 },
